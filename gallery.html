@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery - Ongole 150 Years</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="logo-container"><img src="232618.jpg" alt="Logo" onerror="this.src='https://via.placeholder.com/75?text=150'"><div class="logo-text"><h1>ONGOLE CITY</h1><span>150 Years</span></div></div>
+        <nav>
+            <a href="index.html">Home</a><a href="timeline.html">Timeline</a><a href="fighters.html">Freedom Fighters</a>
+            <a href="gallery.html" class="active-nav">Gallery</a><a href="videos.html">Videos</a><a href="events.html">Events</a><a href="about.html">About</a>
+            <button onclick="openModal()" style="color: var(--ongole-green); font-weight: 700;"><i class="fa-solid fa-lock"></i> Admin</button>
+        </nav>
+    </header>
+
+    <div id="adminDashboard">
+        <h2 style="text-align: center; color: var(--ongole-green); margin-bottom: 25px;">Sesquicentennial Admin Dashboard</h2>
+        <div class="admin-flex">
+            <div class="admin-box" style="max-width: 600px; margin: 0 auto;">
+                <h3><i class="fa-solid fa-cloud-arrow-up"></i> Upload Media (Photo/Video)</h3>
+                <input type="file" id="fileInput" accept="image/*,video/*" multiple>
+                <select id="uploadDayTag">
+                    <option value="Day 1">Day 1 Celebrations</option>
+                    <option value="Day 2">Day 2 Celebrations</option>
+                    <option value="Day 3">Day 3 Celebrations</option>
+                    <option value="Historical Archive">Historical Archive</option>
+                </select>
+                <button class="btn-primary" style="width:100%;" onclick="uploadFiles()">Upload Media</button>
+            </div>
+        </div>
+        <p id="adminStatus" style="text-align:center; margin-top:20px; font-weight:bold; color: var(--ongole-green);"></p>
+        <div style="text-align:center; margin-top: 20px;"><button class="btn-danger" onclick="logout()">Exit Admin Dashboard</button></div>
+    </div>
+
+    <div class="container">
+        <h2 class="section-title">Day-Wise Media Gallery</h2>
+        <p class="section-subtitle">Browse memorable snapshots and media captured across landmark celebration events.</p>
+        <div class="filter-container">
+            <button class="filter-btn active" onclick="filterGallery('all', this)">All Media</button>
+            <button class="filter-btn" onclick="filterGallery('Day 1', this)">Day 1</button>
+            <button class="filter-btn" onclick="filterGallery('Day 2', this)">Day 2</button>
+            <button class="filter-btn" onclick="filterGallery('Day 3', this)">Day 3</button>
+            <button class="filter-btn" onclick="filterGallery('Historical Archive', this)">Archives</button>
+        </div>
+        <div class="gallery-grid" id="galleryContainer"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+    </div>
+
+    <!-- Login Modal with CAPTCHA + OTP -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <h3 style="color: var(--ongole-green); margin-bottom: 20px;" id="modalTitle">Admin Authentication</h3>
+            <div id="step1Credentials">
+                <input type="text" id="username" placeholder="Username" style="width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #cbd5e1; border-radius: 8px;">
+                <input type="password" id="password" placeholder="Password" style="width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #cbd5e1; border-radius: 8px;">
+                <div style="display: flex; gap: 10px; margin-bottom: 18px; align-items: center;">
+                    <div id="captchaBox" style="background: repeating-linear-gradient(45deg, #f1f5f9, #f1f5f9 5px, #e2e8f0 5px, #e2e8f0 10px); font-family: monospace; font-size: 1.3rem; font-weight: 800; letter-spacing: 5px; padding: 10px; border-radius: 6px; width: 130px; text-align: center; text-decoration: line-through; color: #334155;"></div>
+                    <button style="background: none; border: none; font-size: 1.2rem; color: var(--ongole-green); cursor: pointer;" onclick="generateCaptcha()"><i class="fa-solid fa-arrows-rotate"></i></button>
+                    <input type="text" id="captchaInput" placeholder="Captcha" maxlength="6" style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px;">
+                </div>
+                <button class="btn-primary" style="width: 100%; margin-bottom: 10px;" onclick="requestOtp()">Next: Send OTP</button>
+            </div>
+            <div id="step2Otp" style="display: none;">
+                <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 15px;">Enter the 6-digit verification code generated for your session.</p>
+                <input type="text" id="otpInput" placeholder="Enter 6-digit OTP" maxlength="6" style="width: 100%; padding: 12px; margin-bottom: 18px; border: 1px solid #cbd5e1; border-radius: 8px; text-align: center; font-size: 1.2rem; letter-spacing: 3px;">
+                <button class="btn-primary" style="width: 100%; margin-bottom: 10px;" onclick="verifyOtpCode()">Verify & Sign In</button>
+            </div>
+            <p id="loginError" style="color: #ef4444; display: none; font-size: 13px; margin-top: 8px; font-weight: 600;"></p>
+            <button style="background: none; border: none; color: #64748b; margin-top: 10px; cursor: pointer; font-size: 0.9rem;" onclick="closeModal()">Cancel</button>
+        </div>
+    </div>
+
+    <footer><h3>Ongole Municipal Corporation</h3><p>&copy; 2026 Ongole 150 Years Committee.</p></footer>
+
+    <script>
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwY3aQTCmXl2HqZ0EBr1wvKUE6GNqVs1sOpVb1ChEsmYJfj0kVMa9cLHroSMI0Iq775/exec";
+        let currentCaptcha = "";
+
+        window.addEventListener('DOMContentLoaded', () => { fetchImages(); });
+
+        function generateCaptcha() {
+            const chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            let captcha = "";
+            for (let i = 0; i < 6; i++) { captcha += chars[Math.floor(Math.random() * chars.length)]; }
+            currentCaptcha = captcha;
+            document.getElementById("captchaBox").innerText = captcha;
+        }
+
+        function openModal() { document.getElementById("loginModal").style.display = "block"; generateCaptcha(); }
+        function closeModal() { 
+            document.getElementById("loginModal").style.display = "none";
+            document.getElementById("step1Credentials").style.display = "block";
+            document.getElementById("step2Otp").style.display = "none";
+            document.getElementById("modalTitle").innerText = "Admin Authentication";
+            document.getElementById("loginError").style.display = "none";
+        }
+
+        async function requestOtp() {
+            const userField = document.getElementById("username");
+            const passField = document.getElementById("password");
+            const captchaInput = document.getElementById("captchaInput");
+            const errorMsg = document.getElementById("loginError");
+
+            if (captchaInput.value !== currentCaptcha) {
+                errorMsg.innerText = "Invalid CAPTCHA."; errorMsg.style.display = "block";
+                generateCaptcha(); captchaInput.value = ""; return;
+            }
+
+            if (userField.value.trim() === "admin" && passField.value === "ongole150") {
+                errorMsg.style.display = "none";
+                try {
+                    const res = await fetch(GAS_WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "sendOtp" }) });
+                    const data = await res.json();
+                    if(data.status === "success") {
+                        document.getElementById("step1Credentials").style.display = "none";
+                        document.getElementById("step2Otp").style.display = "block";
+                        document.getElementById("modalTitle").innerText = "Enter OTP Code";
+                        alert("OTP Generated! (Test Code: " + data.debugOtp + ")");
+                    }
+                } catch(err) { errorMsg.innerText = "Server connection failed."; errorMsg.style.display = "block"; }
+            } else {
+                errorMsg.innerText = "Invalid Credentials"; errorMsg.style.display = "block";
+                generateCaptcha(); captchaInput.value = "";
+            }
+        }
+
+        async function verifyOtpCode() {
+            const otpVal = document.getElementById("otpInput").value;
+            const errorMsg = document.getElementById("loginError");
+            try {
+                const res = await fetch(GAS_WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "verifyOtp", otp: otpVal }) });
+                const data = await res.json();
+                if (data.status === "success") {
+                    closeModal();
+                    document.getElementById("adminDashboard").style.display = "block";
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    errorMsg.innerText = data.message || "Invalid OTP"; errorMsg.style.display = "block";
+                }
+            } catch(err) { errorMsg.innerText = "Verification failed."; errorMsg.style.display = "block"; }
+        }
+
+        function logout() { document.getElementById("adminDashboard").style.display = "none"; }
+
+        async function fetchImages() {
+            try {
+                const res = await fetch(`${GAS_WEB_APP_URL}?action=getImages`);
+                const items = await res.json();
+                const container = document.getElementById("galleryContainer");
+                container.innerHTML = "";
+                if (!items || items.length === 0) { container.innerHTML = "<p style='grid-column: 1/-1; text-align: center; color: #64748b;'>No media uploaded yet.</p>"; return; }
+                items.forEach(item => {
+                    const isVideo = item.mimeType && item.mimeType.includes("video");
+                    const card = document.createElement("div");
+                    card.className = "gallery-card card-hover";
+                    card.setAttribute("data-day", item.day || "Day 1");
+                    card.innerHTML = isVideo ? 
+                        `<span class="media-tag"><i class="fa-solid fa-video"></i> Video</span><video class="gallery-media" controls><source src="${item.url}" type="${item.mimeType}"></video><div class="gallery-info"><h4>${item.name}</h4><span>${item.day}</span></div>` :
+                        `<span class="media-tag">${item.day}</span><img src="${item.url}" alt="${item.name}" class="gallery-media" loading="lazy"><div class="gallery-info"><h4>${item.name}</h4><span>Archive</span></div>`;
+                    container.appendChild(card);
+                });
+            } catch (err) { console.error(err); }
+        }
+
+        function filterGallery(filter, btn) {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            if(btn) btn.classList.add('active');
+            document.querySelectorAll('.gallery-card').forEach(card => {
+                card.style.display = (filter === 'all' || card.getAttribute("data-day") === filter) ? "block" : "none";
+            });
+        }
+
+        async function uploadFiles() {
+            const fileInput = document.getElementById("fileInput");
+            const dayTag = document.getElementById("uploadDayTag").value;
+            const statusEl = document.getElementById("adminStatus");
+            if (fileInput.files.length === 0) return alert("Select files.");
+            statusEl.innerText = "Uploading...";
+            for (let file of fileInput.files) {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                await new Promise(resolve => {
+                    reader.onload = async () => {
+                        await fetch(GAS_WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "uploadMedia", fileName: file.name, mimeType: file.type, dayTag: dayTag, fileData: reader.result.split(",")[1] }) });
+                        resolve();
+                    };
+                });
+            }
+            statusEl.innerText = "Complete!"; fileInput.value = ""; fetchImages(); setTimeout(() => statusEl.innerText = "", 3000);
+        }
+    </script>
+</body>
+</html>
