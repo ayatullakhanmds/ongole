@@ -48,25 +48,39 @@
         <div class="gallery-grid" id="galleryContainer"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
     </div>
 
-    <!-- Login Modal with CAPTCHA + OTP -->
+    <!-- Login Modal with CAPTCHA, OTP, & Forgot Password -->
     <div id="loginModal" class="modal">
         <div class="modal-content">
             <h3 style="color: var(--ongole-green); margin-bottom: 20px;" id="modalTitle">Admin Authentication</h3>
+            
             <div id="step1Credentials">
                 <input type="text" id="username" placeholder="Username" style="width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #cbd5e1; border-radius: 8px;">
                 <input type="password" id="password" placeholder="Password" style="width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #cbd5e1; border-radius: 8px;">
-                <div style="display: flex; gap: 10px; margin-bottom: 18px; align-items: center;">
+                <div style="display: flex; gap: 10px; margin-bottom: 12px; align-items: center;">
                     <div id="captchaBox" style="background: repeating-linear-gradient(45deg, #f1f5f9, #f1f5f9 5px, #e2e8f0 5px, #e2e8f0 10px); font-family: monospace; font-size: 1.3rem; font-weight: 800; letter-spacing: 5px; padding: 10px; border-radius: 6px; width: 130px; text-align: center; text-decoration: line-through; color: #334155;"></div>
                     <button style="background: none; border: none; font-size: 1.2rem; color: var(--ongole-green); cursor: pointer;" onclick="generateCaptcha()"><i class="fa-solid fa-arrows-rotate"></i></button>
                     <input type="text" id="captchaInput" placeholder="Captcha" maxlength="6" style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px;">
                 </div>
+                <div style="text-align: right; margin-bottom: 15px;">
+                    <button style="background:none; border:none; color: var(--ongole-green); font-size: 0.85rem; font-weight: 600; cursor: pointer;" onclick="showForgotPassword()">Forgot Password?</button>
+                </div>
                 <button class="btn-primary" style="width: 100%; margin-bottom: 10px;" onclick="requestOtp()">Next: Send OTP</button>
             </div>
+
             <div id="step2Otp" style="display: none;">
                 <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 15px;">Enter the 6-digit verification code generated for your session.</p>
                 <input type="text" id="otpInput" placeholder="Enter 6-digit OTP" maxlength="6" style="width: 100%; padding: 12px; margin-bottom: 18px; border: 1px solid #cbd5e1; border-radius: 8px; text-align: center; font-size: 1.2rem; letter-spacing: 3px;">
                 <button class="btn-primary" style="width: 100%; margin-bottom: 10px;" onclick="verifyOtpCode()">Verify & Sign In</button>
             </div>
+
+            <div id="step3Reset" style="display: none;">
+                <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 15px;">Enter your recovery token and type a new password.</p>
+                <input type="text" id="resetTokenInput" placeholder="4-digit Reset Token" maxlength="4" style="width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #cbd5e1; border-radius: 8px; text-align: center; font-size: 1.1rem; letter-spacing: 2px;">
+                <input type="password" id="newPasswordInput" placeholder="New Password" style="width: 100%; padding: 12px; margin-bottom: 18px; border: 1px solid #cbd5e1; border-radius: 8px;">
+                <button class="btn-primary" style="width: 100%; margin-bottom: 10px;" onclick="submitNewPassword()">Update Password</button>
+                <button style="background: none; border: none; color: #64748b; cursor: pointer; font-size: 0.85rem;" onclick="closeModal()">Back to Login</button>
+            </div>
+
             <p id="loginError" style="color: #ef4444; display: none; font-size: 13px; margin-top: 8px; font-weight: 600;"></p>
             <button style="background: none; border: none; color: #64748b; margin-top: 10px; cursor: pointer; font-size: 0.9rem;" onclick="closeModal()">Cancel</button>
         </div>
@@ -75,7 +89,7 @@
     <footer><h3>Ongole Municipal Corporation</h3><p>&copy; 2026 Ongole 150 Years Committee.</p></footer>
 
     <script>
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwY3aQTCmXl2HqZ0EBr1wvKUE6GNqVs1sOpVb1ChEsmYJfj0kVMa9cLHroSMI0Iq775/exec";
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxtpsmkAGn4OSMfYuReW7LuLuaAXmT1OipgcoadP-zKl3eBbF5tHYEfdOg1O_K9I_hE/exec";
         let currentCaptcha = "";
 
         window.addEventListener('DOMContentLoaded', () => { fetchImages(); });
@@ -93,6 +107,7 @@
             document.getElementById("loginModal").style.display = "none";
             document.getElementById("step1Credentials").style.display = "block";
             document.getElementById("step2Otp").style.display = "none";
+            document.getElementById("step3Reset").style.display = "none";
             document.getElementById("modalTitle").innerText = "Admin Authentication";
             document.getElementById("loginError").style.display = "none";
         }
@@ -140,6 +155,51 @@
                     errorMsg.innerText = data.message || "Invalid OTP"; errorMsg.style.display = "block";
                 }
             } catch(err) { errorMsg.innerText = "Verification failed."; errorMsg.style.display = "block"; }
+        }
+
+        function showForgotPassword() {
+            document.getElementById("step1Credentials").style.display = "none";
+            document.getElementById("step3Reset").style.display = "block";
+            document.getElementById("modalTitle").innerText = "Reset Password";
+            document.getElementById("loginError").style.display = "none";
+
+            fetch(GAS_WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "forgotPassword" }) })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === "success") {
+                    alert("Recovery Token Generated! (Test Token: " + data.debugToken + ")");
+                }
+            });
+        }
+
+        async function submitNewPassword() {
+            const token = document.getElementById("resetTokenInput").value;
+            const newPassword = document.getElementById("newPasswordInput").value;
+            const errorMsg = document.getElementById("loginError");
+
+            if (!token || !newPassword) {
+                errorMsg.innerText = "Please fill in all fields.";
+                errorMsg.style.display = "block";
+                return;
+            }
+
+            try {
+                const res = await fetch(GAS_WEB_APP_URL, {
+                    method: "POST",
+                    body: JSON.stringify({ action: "resetPassword", token: token, newPassword: newPassword })
+                });
+                const data = await res.json();
+                if (data.status === "success") {
+                    alert("Password updated successfully! You can now log in.");
+                    closeModal();
+                } else {
+                    errorMsg.innerText = data.message || "Invalid reset token.";
+                    errorMsg.style.display = "block";
+                }
+            } catch(err) {
+                errorMsg.innerText = "Password reset failed.";
+                errorMsg.style.display = "block";
+            }
         }
 
         function logout() { document.getElementById("adminDashboard").style.display = "none"; }
